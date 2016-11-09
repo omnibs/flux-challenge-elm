@@ -15,15 +15,16 @@ type alias Model = { jedis : List Slot }
 
 init : (Model, Cmd Msg)
 init =
-  (Model [], fetchJedi 3616)
-
+  (Model [Empty, Empty, Empty, Empty, Empty], fetchJedi Apprentice 3616)
 
 -- UPDATE
+
+type MasterApprentice = Master | Apprentice
 
 type Msg
   = Up
   | Down
-  | FetchSucceed DarkJedi
+  | FetchSucceed MasterApprentice DarkJedi
   | FetchFail Http.Error
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -37,20 +38,65 @@ update msg model =
       --(model, getRandomGif model.topic)
       (model, Cmd.none)
 
-    FetchSucceed jedi ->
+    FetchSucceed masterApprentice jedi ->
+      let
+        jedis = updateList masterApprentice jedi model.jedis
+      in
       -- add jedi and make another call if necessary
-      (Model (model.jedis ++ [Far jedi]), Cmd.none)
+      ({model | jedis = jedis}, Cmd.none)
 
     FetchFail _ ->
       -- maybe call again?
       (model, Cmd.none)
 
-fetchJedi : Int -> Cmd Msg
-fetchJedi id =
+updateList : MasterApprentice -> DarkJedi -> List Slot -> List Slot
+updateList masterApprentice =
+  case masterApprentice of
+    Master ->
+      replaceLastEmptyFromTop
+    Apprentice ->
+      replaceFirstEmptyFromBottom
+
+replaceLastEmptyFromTop : DarkJedi -> List Slot -> List Slot
+replaceLastEmptyFromTop s l =
+  List.reverse (doReplaceLastEmptyFromTop s [] l)
+
+doReplaceLastEmptyFromTop : DarkJedi -> List Slot -> List Slot -> List Slot
+doReplaceLastEmptyFromTop s acc l =
+  case l of
+    [Empty] ->
+      (Far s) :: acc
+    (Empty :: Empty :: rest) ->
+      let
+        acc = (Empty :: acc)
+        l = List.drop 1 l
+      in
+        doReplaceLastEmptyFromTop s acc l
+    (Empty :: rest) ->
+      let
+        acc = (Far s :: acc)
+      in
+        doReplaceLastEmptyFromTop s acc rest
+    (nonempty :: rest) ->
+      let
+        acc = nonempty :: acc
+      in
+        doReplaceLastEmptyFromTop s acc rest
+    [] -> []
+
+replaceFirstEmptyFromBottom : DarkJedi -> List Slot -> List Slot
+replaceFirstEmptyFromBottom s l =
+  let
+    l = List.reverse l
+  in
+    List.reverse (replaceLastEmptyFromTop s l)
+
+fetchJedi : MasterApprentice -> Int -> Cmd Msg
+fetchJedi masterApprentice id =
   let
     url = "http://localhost:3000/dark-jedis/" ++ toString(id)
   in
-    Task.perform FetchFail FetchSucceed (Http.get decodeDarkJedi url)
+    Task.perform FetchFail (FetchSucceed masterApprentice) (Http.get decodeDarkJedi url)
 
 -- VIEW
 
