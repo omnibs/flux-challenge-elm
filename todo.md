@@ -1,7 +1,7 @@
 x Add apprenties to the bottom
 x Make up button work
-* Add masters to the top
-* Make down button work
+x Add masters to the top
+x Make down button work
 * Find out if canelling request works
 * Make socket work
 * Show current planet

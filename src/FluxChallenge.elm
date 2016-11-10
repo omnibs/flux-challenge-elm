@@ -42,7 +42,13 @@ update msg model =
           (model, Cmd.none)
 
     Down ->
-      (model, Cmd.none)
+      case (List.reverse model.jedis) of
+        (Far master :: _) ->
+          pageDown model master
+        (Nearby master :: _) ->
+          pageDown model master
+        _ ->
+          (model, Cmd.none)
 
     FetchSucceed masterApprentice jedi ->
       let
@@ -55,6 +61,18 @@ update msg model =
     FetchFail _ ->
       -- maybe call again?
       (model, Cmd.none)
+
+pageDown : Model -> DarkJedi -> (Model, Cmd Msg)
+pageDown model master =
+  let
+    jedis = (List.drop 2 model.jedis) ++ [Empty, Empty]
+    new_model = {model | jedis = jedis}
+  in
+    case master.apprentice.id of
+      Just id ->
+        (new_model, fetchJedi Apprentice id)
+      _ -> (model, Cmd.none)
+
 
 pageUp : Model -> DarkJedi -> (Model, Cmd Msg)
 pageUp model apprentice =
@@ -149,7 +167,7 @@ view model =
       , div [ class "css-scroll-buttons" ]
         [ button [ class "css-button-up", onClick Up ]
           []
-        , button [ class "css-button-down" ]
+        , button [ class "css-button-down", onClick Down ]
           []
         ]
       ]
