@@ -17,7 +17,7 @@ Open the displayed url in your browser, click `index.html`.
 
 # Is this 100%?
 
-Nope, check [todo.md](./todo.md)
+Nope, check [todo.txt](./todo.txt)
 
 # Why not clone their repo and submit this?
 
