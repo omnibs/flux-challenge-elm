@@ -33,7 +33,13 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Up ->
-      (model, Cmd.none)
+      case model.jedis of
+        (Far apprentice :: _) ->
+          pageUp model apprentice
+        (Nearby apprentice :: _) ->
+          pageUp model apprentice
+        _ ->
+          (model, Cmd.none)
 
     Down ->
       (model, Cmd.none)
@@ -49,6 +55,17 @@ update msg model =
     FetchFail _ ->
       -- maybe call again?
       (model, Cmd.none)
+
+pageUp : Model -> DarkJedi -> (Model, Cmd Msg)
+pageUp model apprentice =
+  let
+    jedis = [Empty, Empty] ++ (List.take 3 model.jedis)
+    new_model = {model | jedis = jedis}
+  in
+    case apprentice.master.id of
+      Just id ->
+        (new_model, fetchJedi Master id)
+      _ -> (model, Cmd.none)
 
 fetchEmpty : List Slot -> MasterApprentice -> DarkJedi -> Cmd Msg
 fetchEmpty jedis masterApprentice jedi =
@@ -130,7 +147,7 @@ view model =
     , section [ class "css-scrollable-list" ]
       [ ul [ class "css-slots" ] (buildSlots model)
       , div [ class "css-scroll-buttons" ]
-        [ button [ class "css-button-up" ]
+        [ button [ class "css-button-up", onClick Up ]
           []
         , button [ class "css-button-down" ]
           []
