@@ -10,7 +10,7 @@ type alias DarkJedi =
   , name : String
   , homeworld : Homeworld
   , master : Master
-  , apprentice : DarkJediApprentice
+  , apprentice : Apprentice
   }
 
 type alias Homeworld =
@@ -19,13 +19,13 @@ type alias Homeworld =
   }
 
 type alias Master =
-  { url : String
-  , id : Int
+  { url : Maybe String
+  , id : Maybe Int
   }
 
-type alias DarkJediApprentice =
-  { url : String
-  , id : Int
+type alias Apprentice =
+  { url : Maybe String
+  , id : Maybe Int
   }
 
 decodeDarkJedi : Json.Decode.Decoder DarkJedi
@@ -46,14 +46,14 @@ decodeHomeworld =
 decodeDarkJediMaster : Json.Decode.Decoder Master
 decodeDarkJediMaster =
   Json.Decode.Pipeline.decode Master
-    |> Json.Decode.Pipeline.required "url" (Json.Decode.string)
-    |> Json.Decode.Pipeline.required "id" (Json.Decode.int)
+    |> Json.Decode.Pipeline.required "url" (Json.Decode.Pipeline.nullable Json.Decode.string)
+    |> Json.Decode.Pipeline.required "id" (Json.Decode.Pipeline.nullable Json.Decode.int)
 
-decodeDarkJediApprentice : Json.Decode.Decoder DarkJediApprentice
+decodeDarkJediApprentice : Json.Decode.Decoder Apprentice
 decodeDarkJediApprentice =
-  Json.Decode.Pipeline.decode DarkJediApprentice
-    |> Json.Decode.Pipeline.required "url" (Json.Decode.string)
-    |> Json.Decode.Pipeline.required "id" (Json.Decode.int)
+  Json.Decode.Pipeline.decode Apprentice
+    |> Json.Decode.Pipeline.required "url" (Json.Decode.Pipeline.nullable Json.Decode.string)
+    |> Json.Decode.Pipeline.required "id" (Json.Decode.Pipeline.nullable Json.Decode.int)
 
 encodeDarkJedi : DarkJedi -> Json.Encode.Value
 encodeDarkJedi record =
@@ -75,13 +75,29 @@ encodeHomeworld record =
 encodeDarkJediMaster : Master -> Json.Encode.Value
 encodeDarkJediMaster record =
   Json.Encode.object
-    [ ("url",  Json.Encode.string <| record.url)
-    , ("id",  Json.Encode.int <| record.id)
+    [ ("url",  nullString record.url)
+    , ("id",  nullInt record.id)
     ]
 
-encodeDarkJediApprentice : DarkJediApprentice -> Json.Encode.Value
+encodeDarkJediApprentice : Apprentice -> Json.Encode.Value
 encodeDarkJediApprentice record =
   Json.Encode.object
-    [ ("url",  Json.Encode.string <| record.url)
-    , ("id",  Json.Encode.int <| record.id)
+    [ ("url",  nullString record.url)
+    , ("id",  nullInt record.id)
     ]
+
+nullString : Maybe String -> Json.Encode.Value
+nullString str =
+  case str of
+    Just s ->
+      Json.Encode.string <| s
+    Nothing ->
+      Json.Encode.null
+
+nullInt : Maybe Int -> Json.Encode.Value
+nullInt int =
+  case int of
+    Just i ->
+      Json.Encode.int <| i
+    Nothing ->
+      Json.Encode.null

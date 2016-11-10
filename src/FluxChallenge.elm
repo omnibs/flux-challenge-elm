@@ -1,3 +1,5 @@
+module FluxChallenge exposing (..)
+
 import Html exposing (..)
 import Html.Events exposing (..)
 import Html.Attributes exposing (..)
@@ -31,23 +33,42 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Up ->
-      --(model, getRandomGif model.topic)
       (model, Cmd.none)
 
     Down ->
-      --(model, getRandomGif model.topic)
       (model, Cmd.none)
 
     FetchSucceed masterApprentice jedi ->
       let
         jedis = updateList masterApprentice jedi model.jedis
+        model = {model | jedis = jedis}
       in
       -- add jedi and make another call if necessary
-      ({model | jedis = jedis}, Cmd.none)
+      (model, fetchEmpty model.jedis masterApprentice jedi)
 
     FetchFail _ ->
       -- maybe call again?
       (model, Cmd.none)
+
+fetchEmpty : List Slot -> MasterApprentice -> DarkJedi -> Cmd Msg
+fetchEmpty jedis masterApprentice jedi =
+  case masterApprentice of
+    Master ->
+      case jedi.master.id of
+        Just id ->
+          case jedis of
+            (Empty :: _) ->
+              fetchJedi masterApprentice id
+            _ -> Cmd.none
+        _ -> Cmd.none
+    Apprentice ->
+      case jedi.apprentice.id of
+        Just id ->
+          case (List.reverse jedis) of
+            (Empty :: _) ->
+              fetchJedi masterApprentice id
+            _ -> Cmd.none
+        _ -> Cmd.none
 
 updateList : MasterApprentice -> DarkJedi -> List Slot -> List Slot
 updateList masterApprentice =
@@ -82,7 +103,7 @@ doReplaceLastEmptyFromTop s acc l =
         acc = nonempty :: acc
       in
         doReplaceLastEmptyFromTop s acc rest
-    [] -> []
+    [] -> acc
 
 replaceFirstEmptyFromBottom : DarkJedi -> List Slot -> List Slot
 replaceFirstEmptyFromBottom s l =
@@ -146,7 +167,6 @@ buildSlot slot =
         , h6 []
           [ text ("Homeworld: " ++ jedi.homeworld.name) ]
         ]
-
 
 main =
   Html.program
